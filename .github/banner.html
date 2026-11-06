@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1280px; height: 400px; background: #111215; overflow: hidden; }
+  body { font-family: Inter, sans-serif; color: #f2f2f2; position: relative; }
+  .mark { position: absolute; left: 64px; top: 58px; display: flex; align-items: center; gap: 14px; }
+  .mark svg { width: 38px; height: 38px; }
+  .mark span { font-family: 'JetBrains Mono', monospace; font-size: 25px; color: #f2f2f2; }
+  .mark span b { color: #f5b335; font-weight: 400; }
+  h1 { position: absolute; left: 64px; top: 116px; margin: 0; font-size: 37px; line-height: 46px; font-weight: 800; letter-spacing: -0.5px; }
+  h1 em { font-style: normal; color: #f5b335; display: block; }
+  p.sub { position: absolute; left: 64px; top: 220px; margin: 0; font-size: 16px; color: #a7a9ae; font-weight: 600; width: 520px; line-height: 23px; }
+  .chips { position: absolute; left: 64px; top: 312px; display: flex; gap: 10px; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 15px; padding: 9px 12px; border: 1px solid #2a2c31; border-radius: 6px; background: #17181c; color: #e8e8e8; }
+  .chip b { color: #f5b335; font-weight: 500; }
+  .code { position: absolute; left: 640px; top: 32px; width: 584px; height: 336px; border: 1px solid #2a2c31; border-radius: 8px; background: #15161a; overflow: hidden; }
+  .code .bar { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #9a9ca2; padding: 10px 14px; border-bottom: 1px solid #2a2c31; }
+  .code pre { font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'calt' 0; margin: 0; padding: 12px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 20px; color: #e8e8e8; white-space: pre; }
+  .p { color: #f5b335; } .c { color: #7d8189; } .h { color: #f2f2f2; font-weight: 500; }
+  .br { color: #f2707f; } .wa { color: #f0a35e; } .r { color: #c9cbd0; }
+</style></head>
+<body>
+  <div class="mark">
+    <svg viewBox="0 0 40 40"><circle cx="14" cy="22" r="9" fill="none" stroke="#f5b335" stroke-width="5"/><line x1="26" y1="34" x2="36" y2="6" stroke="#f5b335" stroke-width="5" stroke-linecap="round"/></svg>
+    <span>octo<b>/</b>wasm</span>
+  </div>
+  <h1>FHIR in the browser,<em>no server behind it</em></h1>
+  <p class="sub">The validator, FHIRPath, SQL on FHIR, FML and UCUM of OctoFHIR, in one WebAssembly module.</p>
+  <div class="chips">
+    <div class="chip">FHIR <b>R4–R6</b></div>
+    <div class="chip">brotli <b>1.6 MB</b></div>
+    <div class="chip">MIT OR Apache-2.0</div>
+  </div>
+  <div class="code">
+    <div class="bar">app.js</div>
+<pre><span class="p">import</span> init, { Fhir, runView, fmlTransform } <span class="p">from</span> <span class="r">"@octofhir/wasm"</span>;
+
+<span class="p">await</span> init();
+<span class="p">const</span> fhir = <span class="p">await</span> Fhir.create(<span class="r">"R4"</span>, [profile]);
+
+<span class="p">await</span> fhir.evaluate(<span class="r">"name.given.first()"</span>, patient);
+<span class="c">// ["Ann"]</span>
+
+<span class="p">await</span> fhir.validate(patient, profile.url);
+<span class="c">// { valid: false, errors: [{ message:</span>
+<span class="c">//   "Required element 'birthDate' is missing" }] }</span>
+
+<span class="p">await</span> runView(view, [patient]);
+<span class="c">// { columns: ["id"], rows: [{ id: "p" }] }</span></pre>
+  </div>
+</body></html>

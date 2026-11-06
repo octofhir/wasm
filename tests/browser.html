@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>octofhir-wasm</title>
+<pre id="out">running</pre>
+<script type="module">
+import init, { Fhir, fmlCheck, runView, ucumValidate } from "../pkg/octofhir_wasm.js";
+
+const out = document.getElementById("out");
+try {
+  await init();
+  const fhir = await Fhir.create("R4");
+  const patient = { resourceType: "Patient", id: "p", gender: "female" };
+  const results = {
+    fhirpath: await fhir.evaluate("gender", patient),
+    valid: (await fhir.validate(patient)).valid,
+    invalid: (await fhir.validate({ resourceType: "Patient", nonsense: 1 })).valid,
+    rows: (await runView({ resourceType: "ViewDefinition", status: "active", resource: "Patient",
+      select: [{ column: [{ name: "id", path: "id" }] }] }, [patient])).rows,
+    ucum: ucumValidate("mg/dL"),
+    fml: fmlCheck("map \"http://example.org/m\" = \"m\"", "R4").length,
+  };
+  out.textContent = "PASS " + JSON.stringify(results);
+} catch (error) {
+  out.textContent = "FAIL " + error;
+}
+</script>

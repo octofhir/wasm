@@ -1,0 +1,11 @@
+[package]
+name = "moka"
+version = "0.12.99"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "The part of the moka API OctoFHIR uses, for wasm32-unknown-unknown, where moka cannot run"
+publish = false
+
+[features]
+future = []
+sync = []
