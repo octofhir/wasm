@@ -1,6 +1,7 @@
 name: Release
 
-# Pushing a `vX.Y.Z` tag builds the web module and publishes it to npm as `@octofhir/wasm`.
+# Pushing a `vX.Y.Z` tag builds the web module and publishes it to npm: `@octofhir/wasm` with
+# all four FHIR versions, `@octofhir/wasm-r4` and `@octofhir/wasm-r5` with one each.
 # Needs the `NPM_TOKEN` secret of an account that may publish to the `@octofhir` scope.
 
 on:
@@ -16,8 +17,19 @@ env:
 
 jobs:
   publish:
-    name: publish to npm
+    name: publish ${{ matrix.package }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - package: "@octofhir/wasm"
+            versions: ""
+          - package: "@octofhir/wasm-r4"
+            versions: R4
+          - package: "@octofhir/wasm-r5"
+            versions: R5
+    env:
+      OCTOFHIR_FHIR_VERSIONS: ${{ matrix.versions }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -42,7 +54,7 @@ jobs:
         run: wasm-pack build --release --target web --out-dir pkg
       - name: Name the package
         run: |
-          jq '.name = "@octofhir/wasm"
+          jq --arg name "${{ matrix.package }}" '.name = $name
               | .repository = {"type": "git", "url": "https://github.com/octofhir/wasm"}
               | .license = "MIT OR Apache-2.0"' pkg/package.json > pkg/package.next
           mv pkg/package.next pkg/package.json
@@ -53,6 +65,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance
       - name: GitHub release
+        if: matrix.package == '@octofhir/wasm'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes

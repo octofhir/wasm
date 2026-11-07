@@ -35,13 +35,20 @@ fn to_js(value: &impl Serialize) -> Result<JsValue, JsError> {
 }
 
 fn versions(version: &str) -> Result<(FhirVersion, ModelFhirVersion), JsError> {
-    match version {
-        "R4" => Ok((FhirVersion::R4, ModelFhirVersion::R4)),
-        "R4B" => Ok((FhirVersion::R4B, ModelFhirVersion::R4B)),
-        "R5" => Ok((FhirVersion::R5, ModelFhirVersion::R5)),
-        "R6" => Ok((FhirVersion::R6, ModelFhirVersion::R6)),
-        other => Err(failure(format!("Unknown FHIR version {other}"))),
+    let found = match version {
+        "R4" => (FhirVersion::R4, ModelFhirVersion::R4),
+        "R4B" => (FhirVersion::R4B, ModelFhirVersion::R4B),
+        "R5" => (FhirVersion::R5, ModelFhirVersion::R5),
+        "R6" => (FhirVersion::R6, ModelFhirVersion::R6),
+        other => return Err(failure(format!("Unknown FHIR version {other}"))),
+    };
+    // A build for one version holds no definitions of the others.
+    if get_schemas(found.0).is_empty() {
+        return Err(failure(format!(
+            "This build has no {version}: use @octofhir/wasm, which has all four"
+        )));
     }
+    Ok(found)
 }
 
 /// The core of a FHIR version and the profiles given to it.

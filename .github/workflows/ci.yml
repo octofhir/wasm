@@ -32,3 +32,9 @@ jobs:
         run: wasm-pack build --dev --target nodejs --out-dir pkg-node
       - name: Smoke
         run: node tests/smoke.mjs
+      - name: Smoke, R4 only
+        env:
+          OCTOFHIR_FHIR_VERSIONS: R4
+        run: |
+          wasm-pack build --dev --target nodejs --out-dir pkg-node
+          node tests/smoke.mjs

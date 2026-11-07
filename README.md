@@ -49,6 +49,15 @@ four FHIR versions.
 `shims/moka` stands in for the moka cache, which reads a clock that panics on
 `wasm32-unknown-unknown`.
 
+## One FHIR version
+
+`@octofhir/wasm-r4` and `@octofhir/wasm-r5` hold one version each: about half the size (R4: 5.8 MB,
+1.2 MB with brotli). `Fhir.create` with another version rejects. To build one yourself:
+
+```sh
+OCTOFHIR_FHIR_VERSIONS=R4 wasm-pack build --release --target web --out-dir pkg
+```
+
 ## Tests
 
 ```sh

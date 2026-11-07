@@ -78,3 +78,9 @@ const output = await fmlTransform(map, patient, "R4");
 assert.equal(output.target.gender, "female", JSON.stringify(output));
 assert.equal(output.target.id, "copied");
 console.log("fml ok", typo[0].message);
+
+// A build for one version (OCTOFHIR_FHIR_VERSIONS=R4) says so for the others.
+if (process.env.OCTOFHIR_FHIR_VERSIONS === "R4") {
+  await assert.rejects(Fhir.create("R5", []), /This build has no R5/);
+  console.log("one version ok");
+}
