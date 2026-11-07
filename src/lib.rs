@@ -223,6 +223,73 @@ pub async fn fml_transform(
     }))
 }
 
+/// Format a FHIR Mapping Language map. Rejected when the map has syntax errors.
+#[wasm_bindgen(js_name = fmlFormat)]
+pub fn fml_format(source: &str) -> Result<String, JsError> {
+    fml_syntax::format(source, &fml_syntax::FormatOptions::default()).map_err(|error| match error {
+        fml_syntax::FormatError::Syntax(diagnostics) => failure(
+            diagnostics
+                .iter()
+                .map(|d| d.message.as_str())
+                .collect::<Vec<_>>()
+                .join("; "),
+        ),
+        other => failure(format!("{other:?}")),
+    })
+}
+
+/// Compile a FHIR Mapping Language map to a StructureMap: the R4 form for `R4` and `R4B`, the R5
+/// form otherwise.
+#[wasm_bindgen(js_name = fmlCompile)]
+pub fn fml_compile(source: &str, version: &str) -> Result<JsValue, JsError> {
+    let release = release(version)?;
+    let compiled = fml_model::compile(source);
+    if let Some(error) = compiled
+        .diagnostics
+        .iter()
+        .find(|d| d.severity == fml_syntax::Severity::Error)
+    {
+        return Err(failure(&error.message));
+    }
+    let map = match release {
+        Release::R4 | Release::R4B => fml_model::to_r4(&compiled.map).json,
+        _ => serde_json::to_value(&compiled.map).map_err(failure)?,
+    };
+    to_js(&map)
+}
+
+/// Print a StructureMap (R4 or R5) as FML.
+#[wasm_bindgen(js_name = fmlPrint)]
+pub fn fml_print(map: JsValue) -> Result<String, JsError> {
+    let map = fml_model::from_json(from_js(map)?).map_err(failure)?;
+    Ok(fml_model::print(&map))
+}
+
+/// The FML language server, for an editor in the page: completion, hover, go to definition,
+/// references, rename, signature help, outline, formatting and semantic tokens, over the core
+/// definitions of a FHIR version. Messages are Language Server Protocol JSON-RPC objects.
+#[wasm_bindgen]
+pub struct FmlLanguageServer {
+    server: fml_lsp::Server,
+}
+
+#[wasm_bindgen]
+impl FmlLanguageServer {
+    #[wasm_bindgen(constructor)]
+    pub fn new(version: &str) -> Result<FmlLanguageServer, JsError> {
+        let definitions = Arc::new(CoreDefinitions::new(release(version)?));
+        Ok(Self {
+            server: fml_lsp::Server::new(definitions),
+        })
+    }
+
+    /// Handle a message from the editor; the replies to send back, as an array: the response to
+    /// a request, and notifications such as `textDocument/publishDiagnostics`.
+    pub fn handle(&mut self, message: JsValue) -> Result<JsValue, JsError> {
+        to_js(&self.server.handle(&from_js(message)?))
+    }
+}
+
 /// Whether a UCUM expression is valid.
 #[wasm_bindgen(js_name = ucumValidate)]
 pub fn ucum_validate(expression: &str) -> bool {

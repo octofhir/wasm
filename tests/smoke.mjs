@@ -3,7 +3,10 @@ import { createRequire } from "node:module";
 import assert from "node:assert/strict";
 
 const require = createRequire(import.meta.url);
-const { Fhir, fmlCheck, fmlTransform, runView, ucumValidate, ucumComparable } = require("../pkg-node/octofhir_wasm.js");
+const {
+  Fhir, fmlCheck, fmlTransform, fmlFormat, fmlCompile, fmlPrint, FmlLanguageServer,
+  runView, ucumValidate, ucumComparable,
+} = require("../pkg-node/octofhir_wasm.js");
 
 const patient = {
   resourceType: "Patient",
@@ -78,6 +81,24 @@ const output = await fmlTransform(map, patient, "R4");
 assert.equal(output.target.gender, "female", JSON.stringify(output));
 assert.equal(output.target.id, "copied");
 console.log("fml ok", typo[0].message);
+
+assert.ok(fmlFormat(map.replace("src.gender as g", "src.gender   as g")).includes("src.gender as g"));
+const structureMap = fmlCompile(map, "R4");
+assert.equal(structureMap.resourceType, "StructureMap");
+assert.ok(fmlPrint(structureMap).includes("group copy("));
+const lsp = new FmlLanguageServer("R4");
+lsp.handle({ jsonrpc: "2.0", id: 1, method: "initialize", params: { capabilities: {} } });
+const opened = lsp.handle({
+  jsonrpc: "2.0", method: "textDocument/didOpen",
+  params: { textDocument: { uri: "file:///m.fml", languageId: "fml", version: 1, text: map } },
+});
+assert.deepEqual(opened[0].params.diagnostics, []);
+const [completion] = lsp.handle({
+  jsonrpc: "2.0", id: 2, method: "textDocument/completion",
+  params: { textDocument: { uri: "file:///m.fml" }, position: { line: 4, character: 6 } },
+});
+assert.ok(completion.result.items.some((item) => item.label === "birthDate"), JSON.stringify(completion));
+console.log("fml tools ok");
 
 // A build for one version (OCTOFHIR_FHIR_VERSIONS=R4) says so for the others.
 if (process.env.OCTOFHIR_FHIR_VERSIONS === "R4") {

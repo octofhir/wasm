@@ -33,6 +33,8 @@ ucumValidate("mg/dL");
 | `runView(view, resources)` | SQL on FHIR: `{columns, rows}` |
 | `fmlCheck(text, version)` | FML diagnostics: syntax, paths and types |
 | `fmlTransform(text, input, version)` | `{target, log, warnings, produced}` |
+| `fmlFormat(text)`, `fmlCompile(text, version)`, `fmlPrint(structureMap)` | FML formatted, compiled to a StructureMap (R4 form for `R4` and `R4B`), and a StructureMap printed as FML |
+| `new FmlLanguageServer(version)`, `.handle(message)` | The FML language server for an editor in the page: takes an LSP message, returns the replies |
 | `ucumValidate(unit)`, `ucumComparable(left, right)` | UCUM |
 
 Failures reject with an `Error`.

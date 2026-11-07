@@ -14,10 +14,11 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-fml-check = { version = "0.2.4", default-features = false, features = ["fhirschema"] }
-fml-engine = { version = "0.2.4", default-features = false, features = ["fhirpath"] }
-fml-model = "0.2.4"
-fml-syntax = "0.2.4"
+fml-check = { version = "0.2.6", default-features = false, features = ["fhirschema"] }
+fml-engine = { version = "0.2.6", default-features = false, features = ["fhirpath"] }
+fml-model = "0.2.6"
+fml-lsp = "0.2.6"
+fml-syntax = "0.2.6"
 octofhir-fhirpath = { version = "0.5.9", default-features = false }
 octofhir-fhirschema = { version = "0.3.42", default-features = false }
 octofhir-sof = { version = "0.3.5", default-features = false }
