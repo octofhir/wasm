@@ -21,6 +21,8 @@ jobs:
     name: publish ${{ matrix.package }}
     runs-on: ubuntu-latest
     strategy:
+      # One package failing does not stop the others.
+      fail-fast: false
       matrix:
         include:
           - package: "@octofhir/wasm"
@@ -51,6 +53,9 @@ jobs:
           version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           test "v$version" = "$GITHUB_REF_NAME"
       - name: Smoke test
+        # On the full build: the smoke test uses R4 whatever the package holds.
+        env:
+          OCTOFHIR_FHIR_VERSIONS: ""
         run: |
           wasm-pack build --dev --target nodejs --out-dir pkg-node
           node tests/smoke.mjs
