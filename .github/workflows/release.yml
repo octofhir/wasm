@@ -2,7 +2,8 @@ name: Release
 
 # Pushing a `vX.Y.Z` tag builds the web module and publishes it to npm: `@octofhir/wasm` with
 # all four FHIR versions, `@octofhir/wasm-r4` and `@octofhir/wasm-r5` with one each.
-# Needs the `NPM_TOKEN` secret of an account that may publish to the `@octofhir` scope.
+# Publishes through npm trusted publishing (OIDC): each package names this repository and this
+# workflow as its trusted publisher on npmjs.com; no token is stored here. Provenance comes with it.
 
 on:
   push:
@@ -40,6 +41,9 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - name: npm
+        run: npm install -g npm@latest
       - name: wasm-pack
         run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
       - name: Tag matches the crate version
@@ -61,9 +65,7 @@ jobs:
           cp README.md pkg/README.md
       - name: Publish
         working-directory: pkg
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        run: npm publish --access public
       - name: GitHub release
         if: matrix.package == '@octofhir/wasm'
         env:
