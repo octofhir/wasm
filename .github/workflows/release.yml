@@ -1,0 +1,58 @@
+name: Release
+
+# Pushing a `vX.Y.Z` tag builds the web module and publishes it to npm as `@octofhir/wasm`.
+# Needs the `NPM_TOKEN` secret of an account that may publish to the `@octofhir` scope.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: wasm-pack
+        run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+      - name: Tag matches the crate version
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          test "v$version" = "$GITHUB_REF_NAME"
+      - name: Smoke test
+        run: |
+          wasm-pack build --dev --target nodejs --out-dir pkg-node
+          node tests/smoke.mjs
+      - name: Build
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Name the package
+        run: |
+          jq '.name = "@octofhir/wasm"
+              | .repository = {"type": "git", "url": "https://github.com/octofhir/wasm"}
+              | .license = "MIT OR Apache-2.0"' pkg/package.json > pkg/package.next
+          mv pkg/package.next pkg/package.json
+          cp README.md pkg/README.md
+      - name: Publish
+        working-directory: pkg
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
